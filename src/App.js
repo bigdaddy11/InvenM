@@ -2,10 +2,11 @@ import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react
 import Home from './pages/Home';
 import Header from './pages/Header';
 import About from './pages/About';
-import Contact from './pages/Contact';
-import Products from './pages/Products';
+import CustomerManagement from './pages/customers/CustomerManagement';
+import ProductManagement from './pages/products/ProductManagement';
 import Excel from './pages/Excel';
 import Invoice from './pages/Invoice';
+import NewCustomerRegistration from './pages/customers/NewCustomerRegistration'
 
 const App = () => {
   return (
@@ -17,12 +18,12 @@ const App = () => {
         <div style={styles.content}>
           <Routes>
             {/* <Route path="/" element={<Home />} /> */}
-            <Route path="/" element={<Invoice />} />
+            <Route path="/" element={<CustomerManagement />} />
+            <Route path="/invoice" element={<Invoice />} />
             <Route path="/about" element={<About />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/contact" element={<Contact />} />
-            
+            <Route path="/products" element={<ProductManagement />} />
             <Route path="/excel" element={<Excel />} />
+            <Route path="/customers/new" element={<NewCustomerRegistration />} />
           </Routes>
         </div>
       </div>
@@ -48,6 +49,7 @@ const styles = {
     display: 'flex',
     flexDirection: "column",
     flexGrow: 1,
+    height: "100%",
   },
   
   // 반응형 레이아웃

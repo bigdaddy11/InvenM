@@ -22,7 +22,7 @@ const Invoice = () => {
   
     return (
       <div>
-        <h3 style={{padding: "0px 5px"}}>발주 관리</h3>
+        <h3 style={styles.h3}>송장 관리</h3>
         <div className="ag-theme-alpine" 
             style={{ marginTop: '5px', width: '100%', height: '500px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}
         >
@@ -31,7 +31,7 @@ const Invoice = () => {
               { headerName: '번호', valueGetter: 'node.rowIndex + 1', width: 80, cellStyl: { textAlign: 'center' } }, // 번호 출력
               { headerName: '주문번호', field: 'orderNumber', width: 150 },
               { headerName: '판매사', field: 'supplier', width: 150 },
-              { headerName: '발주일자', field: 'date', width: 150 }
+              { headerName: '최종업로드일자', field: 'date', width: 150 }
             ]}
             rowData={rowData}
             domLayout="normal"
@@ -42,5 +42,14 @@ const Invoice = () => {
       </div>
     );
 };
+
+const styles = {
+  buttonCustom: {
+    margin: 1
+  },
+  h3: {
+    padding: "0px 5px"
+  }
+}
 
 export default Invoice;
