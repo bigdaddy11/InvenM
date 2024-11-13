@@ -1,11 +1,13 @@
 import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom';
-import Home from './pages/Home';
 import Header from './pages/Header';
 import About from './pages/About';
 import CustomerManagement from './pages/customers/CustomerManagement';
-import ProductManagement from './pages/products/ProductManagement';
-import Excel from './pages/Excel';
-import Invoice from './pages/Invoice';
+import CustomerProduct from './pages/products/CustomerProduct';
+import NewProductRegistration from './pages/products/NewProductRegistration'
+import ProductManagement from './pages/products/ProductsManagement' 
+import { Paper } from '@mui/material';
+import InvoiceManagement from './pages/invoice/InvoiceManagement';
+import Invoice from './pages/invoice/Invoice';
 import NewCustomerRegistration from './pages/customers/NewCustomerRegistration'
 
 const App = () => {
@@ -21,8 +23,10 @@ const App = () => {
             <Route path="/" element={<CustomerManagement />} />
             <Route path="/invoice" element={<Invoice />} />
             <Route path="/about" element={<About />} />
-            <Route path="/products" element={<ProductManagement />} />
-            <Route path="/excel" element={<Excel />} />
+            <Route path="/products" element={<CustomerProduct />} />
+            <Route path="/products/management" element={<ProductManagement />} />
+            <Route path="/products/management/new" element={<NewProductRegistration />} />
+            <Route path="/invoice/management" element={<InvoiceManagement />} />
             <Route path="/customers/new" element={<NewCustomerRegistration />} />
           </Routes>
         </div>

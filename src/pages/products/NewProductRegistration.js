@@ -6,11 +6,16 @@ import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import api from '../common/api'
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-function NewCustomerRegistration() {
+function NewProductRegistration() {
+  const location = useLocation();
   const [rowData, setRowData] = useState([]);
+
+  const customerId = location.state?.customerId; // 전달받은 customerId
+  const customerNm = location.state?.customerNm; // 전달받은 customerId
   const navigate = useNavigate();
+
 
   // 엑셀 업로드 핸들러
   const handleExcelUpload = (e) => {
@@ -29,40 +34,43 @@ function NewCustomerRegistration() {
 
   // 새로운 행 추가
   const handleAddRow = () => {
-    const newRow = { id: '', name: '', contact: '', address: '', isActive: true };
+    const newRow = { id: '', productName: '', invoiceName: '', modelName: ''};
     setRowData([...rowData, newRow]);
   };
 
    // 서버에 데이터 전송
    const handleSubmit = async () => {
     if (rowData.length === 0) {
-      alert('등록할 데이터가 없습니다. 데이터를 입력해 주세요.');
+      alert('등록할 상품이 없습니다. 데이터를 입력해 주세요.');
       return;
     }
 
     // 필드명을 엔티티와 일치하도록 변환
     const mappedData = rowData.map(item => ({
-      customerName: item.거래처명 || '',
-      contact: item.연락처 || '',
-      address: item.주소 || '',
+      productName: item.상품명 || '',
+      invoiceName: item.송장표기 || '',
+      modelName: item.정산시모델명 || '',
       createdBy: "S07237",
+      customerId: customerId,
     }));
 
     try {
-      const response = await api.post('/api/customers', mappedData);
-      alert('거래처 정보가 성공적으로 등록되었습니다.');
-      navigate('/');  // 거래처 관리 화면으로 이동
+      const response = await api.post('/api/products', mappedData);
+      alert('상품이 성공적으로 등록되었습니다.');
+      
     } catch (error) {
-      alert('거래처 등록에 실패했습니다. 관리자에게 문의주세요.');
+      alert('상품등록에 실패했습니다. 관리자에게 문의주세요.');
+    } finally {
+      navigate('/products');  // 상품관리 화면으로 이동
     }
   };
 
   // 컬럼 정의
   const columnDefs = [
     // { headerName: 'ID', field: 'id', editable: true },
-    { headerName: '거래처명', field: '거래처명', editable: true },
-    { headerName: '연락처', field: '연락처', editable: true },
-    { headerName: '주소', field: '주소', editable: true },
+    { headerName: '상품명', field: '상품명', editable: true, width: 250 },
+    { headerName: '송장표기', field: '송장표기', editable: true, width: 250 },
+    { headerName: '정산시모델명', field: '정산시모델명', editable: true, width: 250 },
     // { headerName: '활성화 여부', field: 'isActive', editable: true, cellRenderer: 'booleanCellRenderer' },
   ];
 
@@ -108,9 +116,9 @@ function NewCustomerRegistration() {
     const clipboardData = e.clipboardData.getData('Text');
     const rows = clipboardData.split('\n').map(row => row.split('\t'));
     const newData = rows.map((row) => ({
-      거래처명: row[0] || '',
-      연락처: row[1] || '',
-      주소: row[2] || ''
+      상품명: row[0] || '',
+      송장표기: row[1] || '',
+      정산시모델명: row[2] || ''
     }));
     setRowData(newData);
   };
@@ -132,7 +140,7 @@ function NewCustomerRegistration() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <div>
-          <h3 style={styles.h3}>거래처 신규등록</h3>
+        <h3 style={styles.h3}>{customerNm} 상품등록</h3>
         </div>
         <div style={{ padding: "0px 5px", alignItems: "center", display: "flex", gap: '5px' }}>
           <input
@@ -155,11 +163,10 @@ function NewCustomerRegistration() {
             </button>
           </label>
           <button style={styles.button} onClick={handleAddRow}>행 추가</button>
-          <button style={styles.button} onClick={handleSubmit}>업체등록</button>
+          <button style={styles.button} onClick={handleSubmit}>상품등록</button>
         </div>
       </div>
-      
-      
+
       <div className="ag-theme-alpine" 
         style={{ marginTop: '5px', width: '100%', height: '800px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}>
         <AgGridReact columnDefs={columnDefs} rowData={rowData} domLayout="normal" />
@@ -182,4 +189,4 @@ const styles = {
   }
 };
 
-export default NewCustomerRegistration;
+export default NewProductRegistration;

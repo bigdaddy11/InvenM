@@ -94,14 +94,19 @@ const CustomerManagement = () => {
 
   return (
     <div>
-      <h3 style={styles.h3}>거래처 관리</h3>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginBottom: 5, marginRight: 5 }}>
-        <button onClick={() => navigate('/customers/new')} style={styles.button}>신규등록</button>
-        <button onClick={handleEdit} style={styles.button}>수정</button>
-        <button onClick={handleDelete} style={styles.button}>삭제</button>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div>
+          <h3 style={styles.h3}>거래처 관리</h3>
+        </div>
+        <div style={{ padding: "0px 5px", alignItems: "center", display: "flex", gap: '5px' }}>
+          <button onClick={() => navigate('/customers/new')} style={styles.button}>신규등록</button>
+          <button onClick={handleEdit} style={styles.button}>수정</button>
+          <button onClick={handleDelete} style={styles.button}>삭제</button>
+        </div>
       </div>
       <div className="ag-theme-alpine" 
-        style={{ marginTop: '5px', width: '100%', height: '500px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}>
+        style={{ width: '100%', height: '800px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}>
         <AgGridReact
           columnDefs={columnDefs}
           rowData={rowData}

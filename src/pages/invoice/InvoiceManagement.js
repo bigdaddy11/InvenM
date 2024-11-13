@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 
-const Excel = () => {
+const InvoiceManagement = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const customerId = location.state?.customerId; 
+  const customerNm = location.state?.customerNm; 
+
   const defaultColumns = [
     { headerName: '번호', valueGetter: 'node.rowIndex + 1', width: 80, cellStyle: { textAlign: 'center' } },
     { headerName: '상품명', field: '상품명', editable: true },
@@ -17,17 +23,15 @@ const Excel = () => {
   const [rowData, setRowData] = useState([]);
 
   const { orderId } = useParams();
-  const location = useLocation(); // 전달된 state 접근
   const orderData = location.state; // 행의 모든 정보가 들어있는 객체
 
   // 엑셀 양식 다운로드 기능
   const handleDownloadTemplate = () => {
-    const ws = XLSX.utils.json_to_sheet([
-      { "상품명": "", "수량": "", "보내는사람": "" }
-    ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, "template.xlsx");
+    const fileUrl = "/InvoiceDownloadExample.xlsx"; 
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = "InvoiceDownloadExample.xlsx"; // 다운로드될 파일 이름 설정
+    link.click();
   };
 
   //등록하기
@@ -111,7 +115,7 @@ const Excel = () => {
 
   return (
     <div>
-      <h3 style={styles.h3}>{orderData.supplier} 송장 업로드</h3>
+      <h3 style={styles.h3}>{customerNm} 송장 업로드</h3>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginBottom: 5, marginRight: 5 }}>
         <button style={styles.button} onClick={handleDownloadTemplate}>엑셀 양식 다운로드</button>
         <button style={styles.button} onClick={handleAdd}>등록하기</button>
@@ -127,7 +131,7 @@ const Excel = () => {
         </button>
       </div>
       <div
-        style={{ marginTop: '5px', width: '100%', height: '500px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}
+        style={{ marginTop: '5px', width: '100%', height: '800px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}
         className="ag-theme-alpine"
         // onPaste={handlePaste}
       >
@@ -162,4 +166,4 @@ const styles = {
   }
 }
 
-export default Excel;
+export default InvoiceManagement;
