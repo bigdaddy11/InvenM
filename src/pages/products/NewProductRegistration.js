@@ -68,9 +68,9 @@ function NewProductRegistration() {
   // 컬럼 정의
   const columnDefs = [
     // { headerName: 'ID', field: 'id', editable: true },
-    { headerName: '상품명', field: '상품명', editable: true, width: 250 },
-    { headerName: '송장표기', field: '송장표기', editable: true, width: 250 },
-    { headerName: '정산시모델명', field: '정산시모델명', editable: true, width: 250 },
+    { headerName: '상품명', field: '상품명', editable: true, width: 250, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  }  },
+    { headerName: '송장표기', field: '송장표기', editable: true, width: 250, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  }  },
+    { headerName: '정산시모델명', field: '정산시모델명', editable: true, width: 250, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  }  },
     // { headerName: '활성화 여부', field: 'isActive', editable: true, cellRenderer: 'booleanCellRenderer' },
   ];
 

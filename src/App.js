@@ -1,36 +1,63 @@
-import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom';
-import Header from './pages/Header';
-import About from './pages/About';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { AuthProvider, useAuth } from './AuthContext';
+import LoginPage from './LoginPage';
 import CustomerManagement from './pages/customers/CustomerManagement';
+import NewCustomerRegistration from './pages/customers/NewCustomerRegistration';
 import CustomerProduct from './pages/products/CustomerProduct';
-import NewProductRegistration from './pages/products/NewProductRegistration'
-import ProductManagement from './pages/products/ProductsManagement' 
-import { Paper } from '@mui/material';
-import InvoiceManagement from './pages/invoice/InvoiceManagement';
+import NewProductRegistration from './pages/products/NewProductRegistration';
+import ProductManagement from './pages/products/ProductsManagement';
 import Invoice from './pages/invoice/Invoice';
-import NewCustomerRegistration from './pages/customers/NewCustomerRegistration'
+import InvoiceManagement from './pages/invoice/InvoiceManagement';
+import InvoiceManagementRegistration from './pages/invoice/InvoiceManagementRegistration';
+import Header from './pages/Header';
+
+const PrivateRoute = ({ children }) => {
+  const { isLoggedIn, checkSession } = useAuth();
+
+  useEffect(() => {
+    checkSession(); // 세션 체크
+  }, [checkSession]);
+
+  if (!isLoggedIn) {
+    return <LoginPage />; // 로그인 화면으로 리다이렉트
+  }
+
+  return children;
+};
+
+const AppContent = () => {
+  const location = useLocation(); // 현재 경로 가져오기
+
+  return (
+    <div style={styles.container}>
+      {/* 로그인 페이지가 아닌 경우에만 헤더 표시 */}
+      {location.pathname !== '/login' && <Header />}
+      
+      {/* Routes */}
+      <div style={styles.content}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<PrivateRoute><CustomerManagement /></PrivateRoute>} />
+          <Route path="/customers/new" element={<PrivateRoute><NewCustomerRegistration /></PrivateRoute>} />
+          <Route path="/products" element={<PrivateRoute><CustomerProduct /></PrivateRoute>} />
+          <Route path="/products/management" element={<PrivateRoute><ProductManagement /></PrivateRoute>} />
+          <Route path="/products/management/new" element={<PrivateRoute><NewProductRegistration /></PrivateRoute>} />
+          <Route path="/invoice" element={<PrivateRoute><Invoice /></PrivateRoute>} />
+          <Route path="/invoice/management" element={<PrivateRoute><InvoiceManagement /></PrivateRoute>} />
+          <Route path="/invoice/management/new" element={<PrivateRoute><InvoiceManagementRegistration /></PrivateRoute>} />
+        </Routes>
+      </div>
+    </div>
+  );
+};
 
 const App = () => {
   return (
     <Router>
-      <div style={styles.container}>
-        {/* Header */}
-          <Header />
-        {/* Routes */}
-        <div style={styles.content}>
-          <Routes>
-            {/* <Route path="/" element={<Home />} /> */}
-            <Route path="/" element={<CustomerManagement />} />
-            <Route path="/invoice" element={<Invoice />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/products" element={<CustomerProduct />} />
-            <Route path="/products/management" element={<ProductManagement />} />
-            <Route path="/products/management/new" element={<NewProductRegistration />} />
-            <Route path="/invoice/management" element={<InvoiceManagement />} />
-            <Route path="/customers/new" element={<NewCustomerRegistration />} />
-          </Routes>
-        </div>
-      </div>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </Router>
   );
 };
@@ -42,20 +69,19 @@ const styles = {
     flexGrow: 1,
     flexDirection: 'column',
     alignItems: 'center',
-    maxWidth: '800px',
+    maxWidth: '1800px',
     margin: '0 auto', // 화면 중앙 정렬
     padding: '0 20px', // 모바일에서 좌우 패딩
   },
   content: {
     width: '100%',
-    //marginTop: '5px',
-    backgroundColor: "whitesmoke",
+    backgroundColor: 'whitesmoke',
     display: 'flex',
-    flexDirection: "column",
+    flexDirection: 'column',
     flexGrow: 1,
-    height: "100%",
+    height: '100%',
   },
-  
+
   // 반응형 레이아웃
   '@media (max-width: 768px)': {
     nav: {

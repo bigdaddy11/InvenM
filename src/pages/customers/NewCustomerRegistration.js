@@ -59,11 +59,24 @@ function NewCustomerRegistration() {
 
   // 컬럼 정의
   const columnDefs = [
-    // { headerName: 'ID', field: 'id', editable: true },
-    { headerName: '거래처명', field: '거래처명', editable: true },
-    { headerName: '연락처', field: '연락처', editable: true },
-    { headerName: '주소', field: '주소', editable: true },
-    // { headerName: '활성화 여부', field: 'isActive', editable: true, cellRenderer: 'booleanCellRenderer' },
+    { 
+      headerName: '거래처명', 
+      field: '거래처명', 
+      editable: true, 
+      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  } 
+    },
+    { 
+      headerName: '연락처', 
+      field: '연락처', 
+      editable: true, 
+      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  } 
+    },
+    { 
+      headerName: '주소', 
+      field: '주소', 
+      editable: true, 
+      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  } 
+    },
   ];
 
   // 엑셀 파일 업로드 및 매핑

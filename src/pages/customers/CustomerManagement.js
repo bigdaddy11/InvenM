@@ -33,7 +33,12 @@ const CustomerManagement = () => {
       return;
     }
 
-    console.log("전송할 데이터:", JSON.stringify(changedRows, null, 2)); // 전송할 데이터 확인용
+    // 선택된 거래처 수를 메시지에 표시
+    const confirmChange = window.confirm(`${changedRows.length}개의 거래처를 수정하시겠습니까?`);
+
+    if (!confirmChange) {
+      return; // 취소 시 함수 종료
+    }
     
     try {
       await api.put('/api/customers/batch', changedRows);
@@ -110,6 +115,7 @@ const CustomerManagement = () => {
         <AgGridReact
           columnDefs={columnDefs}
           rowData={rowData}
+          className="ag-theme-alpine"
           rowSelection="multiple"
           onSelectionChanged={onSelectionChanged}
           domLayout="normal"
@@ -117,7 +123,7 @@ const CustomerManagement = () => {
             resizable: true,
             cellStyle: (params) => {
               // 수정된 행은 배경색을 변경하여 시각적으로 표시
-              return editedRows[params.data.id] ? { backgroundColor: '#e0f7fa', color: 'red' } : null;
+              return editedRows[params.data.id] ? { backgroundColor: '#f7ffe0', color: 'green' } : null;
             }}}
           onCellValueChanged={onCellValueChanged}
         />

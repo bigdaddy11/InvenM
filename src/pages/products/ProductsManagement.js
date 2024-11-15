@@ -126,7 +126,7 @@ const ProductsManagement = () => {
             resizable: true,
             cellStyle: (params) => {
               // 수정된 행은 배경색을 변경하여 시각적으로 표시
-              return editedRows[params.data.id] ? { backgroundColor: '#e0f7fa', color: 'red' } : null;
+              return editedRows[params.data.id] ? { backgroundColor: '#f7ffe0', color: 'green' } : null;
             }}}
           onCellValueChanged={onCellValueChanged}
         />

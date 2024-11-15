@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import * as XLSX from 'xlsx';
+import { useLocation, useNavigate } from 'react-router-dom';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
+import api from '../common/api'
 
 const InvoiceManagement = () => {
   const location = useLocation();
@@ -13,122 +13,194 @@ const InvoiceManagement = () => {
   const customerNm = location.state?.customerNm; 
 
   const defaultColumns = [
-    { headerName: '번호', valueGetter: 'node.rowIndex + 1', width: 80, cellStyle: { textAlign: 'center' } },
-    { headerName: '상품명', field: '상품명', editable: true },
-    { headerName: '수량', field: '수량', editable: true },
-    { headerName: '보내는사람', field: '보내는사람', editable: true },
+    { headerCheckboxSelection: true, 
+      checkboxSelection: true, 
+      width: 50 ,
+      cellStyle: (params) => {
+        const style = { cursor: 'pointer', textAlign: 'center' }; // 기본 스타일 
+        if (params.data.isNew) {
+          style.color = 'blue'; // 새 행인 경우 글씨 색상을 파란색으로 설정
+          style.backgroundColor = '#e0f7fa';
+        }
+        return style;
+      }
+    },
+    { headerName: '번호', 
+      valueGetter: 'node.rowIndex + 1', 
+      width: 80, 
+      cellStyle: (params) => {
+        const style = {  textAlign: 'center' }; // 기본 스타일 
+        if (params.data.isNew) {
+          style.color = 'blue'; // 새 행인 경우 글씨 색상을 파란색으로 설정
+          style.backgroundColor = '#e0f7fa';
+        }
+        return style;
+      }
+    }, 
+    { headerName: '송장명', 
+      field: 'invoiceName', 
+      editable: (params) => params.data.isEditable, 
+      width: "700", 
+      cellStyle: (params) => {
+        const style = { }; // 기본 스타일 textAlign: 'center'
+        if (params.data.isNew) {
+          style.color = 'blue'; // 새 행인 경우 글씨 색상을 파란색으로 설정
+          style.backgroundColor = '#e0f7fa';
+        }
+        return style;
+      },
+    },
+    {
+      headerName: '관리',
+      field: 'manage',
+      width: 100,
+    },
   ];
-
-  const [columnDefs, setColumnDefs] = useState(defaultColumns);
   const [rowData, setRowData] = useState([]);
 
-  const { orderId } = useParams();
-  const orderData = location.state; // 행의 모든 정보가 들어있는 객체
+  const fetchInvoices = async () => {
+    if (!customerId) {
+      console.error('Customer ID가 없습니다.');
+      return;
+    }
 
-  // 엑셀 양식 다운로드 기능
-  const handleDownloadTemplate = () => {
-    const fileUrl = "/InvoiceDownloadExample.xlsx"; 
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.download = "InvoiceDownloadExample.xlsx"; // 다운로드될 파일 이름 설정
-    link.click();
+    try {
+      // POST 요청으로 customerId 전달
+      const response = await api.get(`/api/invoices/${customerId}`);
+      const updatedData = response.data.map((item) => ({
+        ...item,
+        isEditable: false, // 기본 데이터는 수정 불가
+        isNew: false, // 기존 데이터는 새로 추가된 데이터가 아님
+      }));
+      setRowData(updatedData);
+    } catch (error) {
+      console.error('송장 데이터 조회 실패:', error);
+      alert('송장 데이터를 불러오지 못했습니다.');
+    }
   };
 
-  //등록하기
-  const handleAdd = () => {
-    alert("기능 준비 중...");
+  useEffect(() => {
+    fetchInvoices();
+  }, [customerId]);
+
+  // 행 추가
+  const handleAddRow = () => {
+    setRowData([
+      ...rowData,
+      { 송장명: '', 발송일자: '', isEditable: true, isNew: true } // Default empty row
+    ]);
   };
 
-  // 엑셀 데이터 붙여넣기 기능
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const clipboardData = e.clipboardData || window.clipboardData;
-    const pastedData = clipboardData.getData('Text');
+  // 송장 등록
+  const handleRegisterInvoices = async () => {
 
-    console.log(pastedData);
+    const newRows = rowData.filter((row) => row.isNew);
 
-    if (!pastedData) return;
+    if (newRows.length === 0) {
+      alert('등록할 데이터가 없습니다. 데이터를 입력해 주세요.');
+      return;
+    }
 
-    const rows = pastedData.split('\n')
-      .map(row => row.split('\t'))
-      .filter(row => row.some(cell => cell.trim() !== '')); // 빈 행 제거
+    // 송장명 필수 입력 체크
+    const invalidRows = newRows
+      .map((row) => rowData.indexOf(row) + 1) // 전체 rowData에서의 1-based index 계산
+      .filter((rowIndex) => !rowData[rowIndex - 1].invoiceName); // 송장명이 없는 행 필터링
 
-    const newData = rows.map((row) => ({
-      상품명: row[0] || '',
-      수량: row[1] || '',
-      보내는사람: row[2] || ''
+    if (invalidRows.length > 0) {
+      alert(`송장명은 필수 입력입니다. ${invalidRows.join(', ')} 행`);
+      return;
+    }
+
+    // 선택된 거래처 수를 메시지에 표시
+    const confirmAdd = window.confirm(`${newRows.length}개의 데이터를 등록하시겠습니까?`);
+    
+    if (!confirmAdd) {
+      return; // 취소 시 함수 종료
+    }
+
+    // 필드명 변환 (서버 엔티티와 일치)
+    const mappedData = newRows.map(row => ({
+      invoiceName: row.invoiceName,
+      sentDate: row.sentDate,
+      customerId: customerId, // 거래처 ID 추가
+      createdBy: "S07237"
     }));
 
-    console.log(newData);
-
-    setRowData(newData || []); // 기본값으로 빈 배열 설정
+    try {
+      await api.post('/api/invoices', mappedData); // 서버로 데이터 전송
+      alert('송장이 성공적으로 등록되었습니다.');
+      fetchInvoices(); // 등록 후 데이터를 다시 불러옵니다.
+    } catch (error) {
+      console.error('등록 실패:', error);
+      alert('송장 등록에 실패했습니다. 다시 시도해 주세요.');
+    }
   };
 
-    // 엑셀 파일 업로드 및 매핑
-    const handleFileUpload = (e) => {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-  
-      reader.onload = (event) => {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-  
-        // 첫 번째 행을 컬럼 이름으로 가져오기
-        const headers = jsonData[0];
-        const rows = jsonData.slice(1);
-  
-        // 기본 컬럼과 일치하는 컬럼만 사용
-        const allowedHeaders = headers.filter(header => 
-          defaultColumns.some(col => col.field === header)
-        );
-  
-        // rowData 생성 - 기본 컬럼에 해당하는 데이터만 매핑
-        const newRowData = rows.map((row) => {
-          const rowData = {};
-          allowedHeaders.forEach((header, index) => {
-            rowData[header] = row[index] || ''; // 컬럼 이름과 매칭되는 데이터 매핑
-          });
-          return rowData;
-        });
-  
-        setRowData(newRowData);
-      };
-  
-      reader.readAsArrayBuffer(file);
-    };
+  const handleDelete = async () => {
+    // 선택된 행 가져오기
+    const selectedNodes = gridRef.current.api.getSelectedNodes();
+    const selectedRows = selectedNodes.map((node) => node.data);
 
-  // 전역적으로 paste 이벤트 감지
-  useEffect(() => {
-    const handleGlobalPaste = (e) => {
-      handlePaste(e);
-    };
+    if (selectedRows.length === 0) {
+      alert('삭제할 항목을 선택해 주세요.');
+      return;
+    }
 
-    document.addEventListener('paste', handleGlobalPaste);
+    // 추가된 행 (isNew: true) 확인
+  const newRows = selectedRows.filter((row) => row.isNew);
+  if (newRows.length > 0) {
+    const newRowIndexes = newRows.map((row) => rowData.indexOf(row) + 1); // 1-based index
+    alert(`추가된 행은 삭제할 수 없습니다. 삭제 불가능한 행 번호: ${newRowIndexes.join(', ')}`);
+    return;
+  }
 
-    return () => {
-      document.removeEventListener('paste', handleGlobalPaste);
-    };
-  }, []);
+    const confirmDelete = window.confirm(`${selectedRows.length}개의 송장을 삭제하시겠습니까?`);
+    if (!confirmDelete) return;
+
+    try {
+      const selectedIds = selectedRows.map((row) => row.id);
+      await api.post('/api/invoices/delete', { ids: selectedIds });
+      alert('선택된 송장이 삭제되었습니다.');
+      // 삭제 후 화면 갱신
+      setRowData(rowData.filter((row) => !selectedIds.includes(row.id)));
+    } catch (error) {
+      console.error('삭제 실패:', error);
+      alert('송장 삭제에 실패했습니다. 다시 시도해 주세요.');
+    }
+  };
+
+  const handleRowClick = (event) => {
+    const rowData = event.data;
+  
+    // 추가된 행인지 확인
+    if (rowData.isNew) {
+      alert('추가된 행은 선택할 수 없습니다.');
+      return;
+    }
+  
+    // 기존 조회된 데이터일 경우 페이지 이동
+    navigate('/invoice/management/new', {
+      state: {
+        invoiceId: rowData.id, // 송장 ID
+        invoiceName: rowData.invoiceName, // 송장명
+        customerId: customerId, // 거래처 ID
+      },
+    });
+  };
+
+  const gridRef = React.useRef();
 
   return (
     <div>
-      <h3 style={styles.h3}>{customerNm} 송장 업로드</h3>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginBottom: 5, marginRight: 5 }}>
-        <button style={styles.button} onClick={handleDownloadTemplate}>엑셀 양식 다운로드</button>
-        <button style={styles.button} onClick={handleAdd}>등록하기</button>
-        <input
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={handleFileUpload}
-          style={{ display: 'none' }}
-          id="fileUpload"
-        />
-        <button style={styles.button} onClick={() => document.getElementById('fileUpload').click()}>
-          엑셀 업로드
-        </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div>
+          <h3 style={styles.h3}>[{customerNm}] 송장관리</h3>
+        </div>
+        <div style={{ padding: "0px 5px", alignItems: "center", display: "flex", gap: '5px' }}>
+          <button style={styles.button} onClick={handleAddRow}>행 추가</button>
+          <button style={styles.button} onClick={handleRegisterInvoices}>송장등록</button>
+          <button style={styles.button} onClick={handleDelete}>송장삭제</button>
+        </div>
       </div>
       <div
         style={{ marginTop: '5px', width: '100%', height: '800px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}
@@ -136,16 +208,17 @@ const InvoiceManagement = () => {
         // onPaste={handlePaste}
       >
         <AgGridReact
-          // columnDefs={[
-          //   { headerName: '번호', valueGetter: 'node.rowIndex + 1', width: 80, cellStyl: { textAlign: 'center' } }, // 번호 출력
-          //   { headerName: '상품명', field: 'field0', editable: true },
-          //   { headerName: '수량', field: 'field1', editable: true },
-          //   { headerName: '보내는사람', field: 'field2', editable: true },
-          // ]}
-          columnDefs={columnDefs}
+          ref={gridRef}
+          columnDefs={defaultColumns}
           rowData={rowData}
+          rowSelection="multiple"
           domLayout="normal"
-          defaultColDef={{ resizable: true }}
+          onRowClicked={handleRowClick} // 행 클릭 이벤트 처리
+          defaultColDef={{ 
+            resizable: false ,
+            sortable: true,
+            
+          }}
         />
       </div>
     </div>
