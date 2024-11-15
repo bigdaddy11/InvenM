@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation, Navigate  } from 'react-router-dom';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from './AuthContext';
 import LoginPage from './LoginPage';
@@ -12,15 +12,14 @@ import InvoiceManagement from './pages/invoice/InvoiceManagement';
 import InvoiceManagementRegistration from './pages/invoice/InvoiceManagementRegistration';
 import Header from './pages/Header';
 
-const PrivateRoute = ({ children }) => {
-  const { isLoggedIn, checkSession } = useAuth();
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
 
-  useEffect(() => {
-    checkSession(); // 세션 체크
-  }, [checkSession]);
+const PrivateRoute = ({ children }) => {
+  const { isLoggedIn } = useAuth();
 
   if (!isLoggedIn) {
-    return <LoginPage />; // 로그인 화면으로 리다이렉트
+    return <Navigate to="/" />;
   }
 
   return children;
@@ -28,17 +27,18 @@ const PrivateRoute = ({ children }) => {
 
 const AppContent = () => {
   const location = useLocation(); // 현재 경로 가져오기
+  const { isLoggedIn } = useAuth(); // 세션 상태 가져오기
 
   return (
     <div style={styles.container}>
-      {/* 로그인 페이지가 아닌 경우에만 헤더 표시 */}
-      {location.pathname !== '/login' && <Header />}
+      {/* 로그인 화면이 아니고, 세션이 유효할 경우에만 헤더 표시 */}
+      {location.pathname !== '/' && isLoggedIn && <Header />}
       
       {/* Routes */}
       <div style={styles.content}>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<PrivateRoute><CustomerManagement /></PrivateRoute>} />
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/customers" element={<PrivateRoute><CustomerManagement /></PrivateRoute>} />
           <Route path="/customers/new" element={<PrivateRoute><NewCustomerRegistration /></PrivateRoute>} />
           <Route path="/products" element={<PrivateRoute><CustomerProduct /></PrivateRoute>} />
           <Route path="/products/management" element={<PrivateRoute><ProductManagement /></PrivateRoute>} />

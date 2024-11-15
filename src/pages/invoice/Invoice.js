@@ -26,9 +26,9 @@ const Invoice = () => {
 
     const columnDefs = [
       { headerName: '코드명', field: 'customerCode', width: 110, cellStyle: { cursor: 'pointer' } },
-      { headerName: '거래처명', field: 'customerName', cellStyle: { cursor: 'pointer' } },
-      { headerName: '연락처', field: 'contact', width: 140, cellStyle: { cursor: 'pointer' } },
-      { headerName: '주소', field: 'address',  width: 320, cellStyle: { cursor: 'pointer' } },
+      { headerName: '거래처명', field: 'customerName', width: 300, cellStyle: { cursor: 'pointer' } },
+      { headerName: '연락처', field: 'contact', width: 200, cellStyle: { cursor: 'pointer' } },
+      { headerName: '주소', field: 'address',  flex: 1, cellStyle: { cursor: 'pointer' } },
     ];
   
     const onRowClick = (event) => {

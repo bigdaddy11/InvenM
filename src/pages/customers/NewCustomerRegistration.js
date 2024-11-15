@@ -51,7 +51,7 @@ function NewCustomerRegistration() {
     try {
       const response = await api.post('/api/customers', mappedData);
       alert('거래처 정보가 성공적으로 등록되었습니다.');
-      navigate('/');  // 거래처 관리 화면으로 이동
+      navigate('/customers');  // 거래처 관리 화면으로 이동
     } catch (error) {
       alert('거래처 등록에 실패했습니다. 관리자에게 문의주세요.');
     }
@@ -63,19 +63,22 @@ function NewCustomerRegistration() {
       headerName: '거래처명', 
       field: '거래처명', 
       editable: true, 
-      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  } 
+      flex: 1,
+      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center'} 
     },
     { 
       headerName: '연락처', 
       field: '연락처', 
       editable: true, 
-      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  } 
+      flex: 1,
+      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center' } 
     },
     { 
       headerName: '주소', 
       field: '주소', 
       editable: true, 
-      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  } 
+      flex: 1,
+      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center'} 
     },
   ];
 
@@ -175,7 +178,14 @@ function NewCustomerRegistration() {
       
       <div className="ag-theme-alpine" 
         style={{ marginTop: '5px', width: '100%', height: '800px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}>
-        <AgGridReact columnDefs={columnDefs} rowData={rowData} domLayout="normal" />
+        <AgGridReact 
+          columnDefs={columnDefs} 
+          rowData={rowData} 
+          domLayout="normal" 
+          defaultColDef={{ 
+            resizable: true,
+          }}
+        />
       </div>
     </div>
   );

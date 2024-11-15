@@ -96,10 +96,10 @@ const ProductsManagement = () => {
 
   const columnDefs = [
     { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
-    { headerName: '상품코드', field: 'productCode', width: 100 },
-    { headerName: '상품명', field: 'productName', editable: true, width: 220 },
-    { headerName: '송장표기명', field: 'invoiceName', editable: true, width: 220 },
-    { headerName: '정산시모델명', field: 'modelName', editable: true, width: 220 },
+    { headerName: '상품코드', field: 'productCode', width: 110 },
+    { headerName: '상품명', field: 'productName', editable: true, flex: 1},
+    { headerName: '송장표기명', field: 'invoiceName', editable: true, flex: 1 },
+    { headerName: '정산시모델명', field: 'modelName', editable: true, flex: 1 },
   ];
 
   return (

@@ -88,10 +88,10 @@ const CustomerManagement = () => {
 
   const columnDefs = [
     { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
-    { headerName: '코드명', field: 'customerCode', width: 100 },
-    { headerName: '거래처명', field: 'customerName', editable: true },
-    { headerName: '연락처', field: 'contact', editable: true, width: 120 },
-    { headerName: '주소', field: 'address', editable: true, width: 300 },
+    { headerName: '코드명', field: 'customerCode', width: 110 },
+    { headerName: '거래처명', field: 'customerName', editable: true, flex: 1 },
+    { headerName: '연락처', field: 'contact', editable: true, width: 120, flex: 1 },
+    { headerName: '주소', field: 'address', editable: true, width: 300, flex: 1 },
     // { headerName: '활성화 여부', field: 'isActive', editable: true, cellEditor: 'agSelectCellEditor', cellEditorParams: {
     //   values: [true, false]
     // }},

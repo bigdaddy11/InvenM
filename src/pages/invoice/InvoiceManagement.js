@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import api from '../common/api'
+import '../../index.css';
 
 const InvoiceManagement = () => {
   const location = useLocation();
@@ -15,7 +16,9 @@ const InvoiceManagement = () => {
   const defaultColumns = [
     { headerCheckboxSelection: true, 
       checkboxSelection: true, 
-      width: 50 ,
+      width: 50,
+      headerStyle: { textAlign: 'center' }, // 헤더 텍스트 가운데 정렬
+      headerClass: 'header-center', // CSS 클래스 추가
       cellStyle: (params) => {
         const style = { cursor: 'pointer', textAlign: 'center' }; // 기본 스타일 
         if (params.data.isNew) {
@@ -23,11 +26,13 @@ const InvoiceManagement = () => {
           style.backgroundColor = '#e0f7fa';
         }
         return style;
-      }
+      },
     },
     { headerName: '번호', 
       valueGetter: 'node.rowIndex + 1', 
       width: 80, 
+      headerStyle: { textAlign: 'center' }, // 헤더 텍스트 가운데 정렬
+      headerClass: 'header-center', // CSS 클래스 추가
       cellStyle: (params) => {
         const style = {  textAlign: 'center' }; // 기본 스타일 
         if (params.data.isNew) {
@@ -40,7 +45,7 @@ const InvoiceManagement = () => {
     { headerName: '송장명', 
       field: 'invoiceName', 
       editable: (params) => params.data.isEditable, 
-      width: "700", 
+      flex: 1,
       cellStyle: (params) => {
         const style = { }; // 기본 스타일 textAlign: 'center'
         if (params.data.isNew) {
@@ -51,9 +56,28 @@ const InvoiceManagement = () => {
       },
     },
     {
-      headerName: '관리',
+      headerName: '송장관리',
       field: 'manage',
+      headerStyle: { textAlign: 'center' }, // 헤더 텍스트 가운데 정렬
       width: 100,
+      cellRenderer: (params) => {
+        // HTML 마크업으로 버튼 스타일 생성
+        return "등록";
+      },
+      cellStyle: (params) => {
+        const style = {
+          color: 'blue', // 텍스트 색상
+          textAlign: 'center', // 텍스트 가운데 정렬
+          cursor: 'pointer', // 클릭 가능한 포인터
+          backgroundColor: 'whitesmoke', // 배경색 설정
+          borderRadius: '10px', // 버튼처럼 둥글게
+        };
+
+        return style;
+      },
+      onCellClicked: (params) => {
+        handleRowClick(params); // 버튼 클릭 이벤트 처리
+      },
     },
   ];
   const [rowData, setRowData] = useState([]);
@@ -174,7 +198,7 @@ const InvoiceManagement = () => {
   
     // 추가된 행인지 확인
     if (rowData.isNew) {
-      alert('추가된 행은 선택할 수 없습니다.');
+      alert('추가된 행은 송장관리를 할 수 없습니다.');
       return;
     }
   
@@ -213,11 +237,10 @@ const InvoiceManagement = () => {
           rowData={rowData}
           rowSelection="multiple"
           domLayout="normal"
-          onRowClicked={handleRowClick} // 행 클릭 이벤트 처리
+          //onRowClicked={handleRowClick} // 행 클릭 이벤트 처리
           defaultColDef={{ 
-            resizable: false ,
+            resizable: true ,
             sortable: true,
-            
           }}
         />
       </div>

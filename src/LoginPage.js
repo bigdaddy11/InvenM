@@ -1,56 +1,41 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from './pages/common/api'; // axios 설정된 API 호출 모듈
+import { useLocation } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
+  const { login } = useAuth();
+  const location = useLocation();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCredentials({ ...credentials, [name]: value });
-  };
+  // 이전 경로 저장
+  const redirectPath = location.state?.from?.pathname || '/customers';
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(''); // 초기화
-
-    try {
-      const response = await api.post('/api/auth/login', credentials);
-      const { token } = response.data;
-
-      // 토큰 저장
-      localStorage.setItem('authToken', token);
-
-      // 대시보드로 이동
-      navigate('/');
-    } catch (err) {
-      setError('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
-    }
+    await login(username, password, redirectPath);
   };
 
   return (
     <div style={styles.container}>
       <form onSubmit={handleLogin} style={styles.form}>
         <h2>Inven M</h2>
-        {error && <p style={styles.error}>{error}</p>}
         <input
           type="text"
+          value={username}
           name="username"
           placeholder="아이디"
-          value={credentials.username}
-          onChange={handleChange}
           style={styles.input}
+          onChange={(e) => setUsername(e.target.value)}
           required
         />
         <input
           type="password"
           name="password"
           placeholder="비밀번호"
-          value={credentials.password}
-          onChange={handleChange}
+          value={password}
           style={styles.input}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
         <button type="submit" style={styles.button}>

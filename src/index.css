@@ -11,3 +11,10 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.ag-theme-alpine .header-center {
+  justify-content: center !important;
+  text-align: center; /* 가운데 정렬 */
+  font-weight: bold; /* 텍스트 굵게 */
+  vertical-align: middle; /* 수직 가운데 정렬 */
+}

@@ -1,6 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '../AuthContext'; // AuthContext import
 
 const Header = () => {
+  const { logout } = useAuth(); // logout 메서드 가져오기
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // 세션 또는 토큰 삭제 로직
+    logout(); // AuthContext에서 로그아웃 상태 업데이트
+    alert('로그아웃되었습니다.');
+  };
 
   return (
     <header style={styles.header}>
@@ -8,12 +19,12 @@ const Header = () => {
         Inven M
       </Link>
       <nav style={styles.nav}>
-        <Link to="/" style={styles.link}>거래처관리</Link>
+        <Link to="/customers" style={styles.link}>거래처관리</Link>
         <Link to="/products" style={styles.link}>상품관리</Link>
         <Link to="/invoice" style={styles.link}>송장관리</Link>
-        {/* <Link to="/about" style={styles.link}>About</Link>
-        <Link to="/products" style={styles.link}>Products</Link>
-        <Link to="/contact" style={styles.link}>Contact</Link> */}
+        <div style={styles.iconContainer} onClick={handleLogout}>
+          <FontAwesomeIcon icon={faSignOutAlt} style={styles.icon} />
+        </div>
       </nav>
     </header>
   );
