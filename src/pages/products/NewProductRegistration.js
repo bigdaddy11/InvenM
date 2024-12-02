@@ -7,8 +7,11 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import api from '../common/api'
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../AuthContext';
 
 function NewProductRegistration() {
+  const { userId } = useAuth(); // AuthContext에서 userId 가져오기
+
   const location = useLocation();
   const [rowData, setRowData] = useState([]);
 
@@ -45,12 +48,21 @@ function NewProductRegistration() {
       return;
     }
 
+    // 빈 행 확인
+    for (let i = 0; i < rowData.length; i++) {
+      const row = rowData[i];
+      if (!row.상품명 || !row.송장표기 || !row.정산시모델명) {
+        alert(`등록할 수 없는 빈 데이터가 있습니다. ${i + 1}번째 행을 확인해주세요.`);
+        return;
+      }
+    }
+
     // 필드명을 엔티티와 일치하도록 변환
     const mappedData = rowData.map(item => ({
       productName: item.상품명 || '',
       invoiceName: item.송장표기 || '',
       modelName: item.정산시모델명 || '',
-      createdBy: "S07237",
+      createdBy: userId,
       customerId: customerId,
     }));
 
@@ -68,9 +80,9 @@ function NewProductRegistration() {
   // 컬럼 정의
   const columnDefs = [
     // { headerName: 'ID', field: 'id', editable: true },
-    { headerName: '상품명', field: '상품명', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  }  },
-    { headerName: '송장표기', field: '송장표기', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  }  },
-    { headerName: '정산시모델명', field: '정산시모델명', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center', flex: 1  }  },
+    { headerName: '상품명', field: '상품명', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', flex: 1  }  },
+    { headerName: '송장표기', field: '송장표기', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', flex: 1  }  },
+    { headerName: '정산시모델명', field: '정산시모델명', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', flex: 1  }  },
     // { headerName: '활성화 여부', field: 'isActive', editable: true, cellRenderer: 'booleanCellRenderer' },
   ];
 
@@ -114,7 +126,11 @@ function NewProductRegistration() {
   const handlePaste = (e) => {
     e.preventDefault();
     const clipboardData = e.clipboardData.getData('Text');
-    const rows = clipboardData.split('\n').map(row => row.split('\t'));
+      // 빈 줄 제거
+    const rows = clipboardData
+    .split('\n')
+    .filter((row) => row.trim() !== '') // 빈 줄 필터링
+    .map((row) => row.split('\t')); // 탭으로 데이터 분리
     const newData = rows.map((row) => ({
       상품명: row[0] || '',
       송장표기: row[1] || '',

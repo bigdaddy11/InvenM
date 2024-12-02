@@ -7,8 +7,11 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import api from '../common/api'
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../AuthContext';
 
 function NewCustomerRegistration() {
+  const { userId } = useAuth(); // AuthContext에서 userId 가져오기
+
   const [rowData, setRowData] = useState([]);
   const navigate = useNavigate();
 
@@ -45,7 +48,11 @@ function NewCustomerRegistration() {
       customerName: item.거래처명 || '',
       contact: item.연락처 || '',
       address: item.주소 || '',
-      createdBy: "S07237",
+      ceoName: item.대표이름 || '',
+      repName: item.담당자명 || '',
+      bankAcount: item.통장사본 || '',
+      license: item.사업자등록증 || '',
+      createdBy: userId,
     }));
 
     try {
@@ -64,22 +71,26 @@ function NewCustomerRegistration() {
       field: '거래처명', 
       editable: true, 
       flex: 1,
-      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center'} 
+      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'} 
     },
     { 
       headerName: '연락처', 
       field: '연락처', 
       editable: true, 
       flex: 1,
-      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center' } 
+      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'} 
     },
     { 
       headerName: '주소', 
       field: '주소', 
       editable: true, 
       flex: 1,
-      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', textAlign: 'center'} 
+      cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'} 
     },
+    { headerName: '대표이름', field: '대표이름', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
+    { headerName: '담당자명', field: '담당자명', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
+    { headerName: '통장사본', field: '통장사본', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
+    { headerName: '사업자등록증', field: '사업자등록증', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
   ];
 
   // 엑셀 파일 업로드 및 매핑
@@ -122,11 +133,21 @@ function NewCustomerRegistration() {
   const handlePaste = (e) => {
     e.preventDefault();
     const clipboardData = e.clipboardData.getData('Text');
-    const rows = clipboardData.split('\n').map(row => row.split('\t'));
+    
+    // 빈 줄 제거
+  const rows = clipboardData
+  .split('\n')
+  .filter((row) => row.trim() !== '') // 빈 줄 필터링
+  .map((row) => row.split('\t')); // 탭으로 데이터 분리
+
     const newData = rows.map((row) => ({
       거래처명: row[0] || '',
       연락처: row[1] || '',
-      주소: row[2] || ''
+      주소: row[2] || '',
+      대표이름: row[3] || '',
+      담당자명: row[4] || '',
+      통장사본: row[5] || '',
+      사업자등록증: row[6] || '',
     }));
     setRowData(newData);
   };
