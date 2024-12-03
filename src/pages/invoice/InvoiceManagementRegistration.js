@@ -1,42 +1,49 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import api from '../common/api'
+import { useAuth } from '../../AuthContext';
 
 const InvoiceManagementRegistration = () => {
+  const { userId } = useAuth(); // AuthContext에서 userId 가져오기
   const location = useLocation();
-  const navigate = useNavigate();
+
+  const [isUploading, setIsUploading] = useState(false);
   
-  const { invoiceId, invoiceName, customerId } = location.state || {};
-  const [ products, setProducts] = useState([]); // 거래처 상품 데이터
-  const productsRef = useRef([]);
+  const { invoiceId, invoiceName } = location.state || {};
+  useEffect(() => {
+    fetchCustomers();
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     if (invoiceId) fetchInvoiceDetails();
   }, [invoiceId]);
 
-  // 거래처 상품 데이터 가져오기
+  const fetchCustomers = async () => {
+    try {
+      const response = await api.get('/api/customers'); // 서버에 GET 요청
+      setCustomers(response.data); // 응답 데이터를 상태에 저장
+      //console.log(customers);
+    } catch (error) {
+      console.error('데이터 조회 오류:', error);
+      alert('데이터를 불러오지 못했습니다.');
+    } 
+  };
+
   const fetchProducts = async () => {
-      if (!customerId) return;
-      try {
-        const response = await api.get(`/api/products/${customerId}`);
-        setProducts(response.data); // 상품 데이터 저장
-      } catch (error) {
-        console.error('상품 데이터 조회 실패:', error);
-        alert('상품 데이터를 불러오지 못했습니다.');
-      }
-    };
-
-  useEffect(() => {
-    fetchProducts();
-  }, [customerId]);
-
-  useEffect(() => {
-    productsRef.current = products; // 최신 상태를 ref에 저장
-  }, [products]);
+    try {
+      const response = await api.get('/api/products'); // 서버에 GET 요청
+      setProducts(response.data); // 응답 데이터를 상태에 저장
+      //console.log(products);
+    } catch (error) {
+      console.error('데이터 조회 오류:', error);
+      alert('데이터를 불러오지 못했습니다.');
+    } 
+  };
 
   const defaultColumns = [
     { headerCheckboxSelection: true, 
@@ -100,7 +107,9 @@ const InvoiceManagementRegistration = () => {
       },
     },
     { headerName: '주문번호', field: '주문번호', editable: true },
-    { headerName: '상품명', field: '상품명', editable: true },
+    { headerName: '거래처명', field: '거래처명', editable: false },
+    { headerName: '상품코드', field: '상품코드', editable: true },
+    { headerName: '송장표기명', field: '송장표기명', editable: false },
     { headerName: '수량', field: '수량', editable: true, 
       valueSetter: (params) => {
       const newValue = params.newValue.trim(); // 공백 제거
@@ -128,18 +137,20 @@ const InvoiceManagementRegistration = () => {
     { headerName: '배송메세지', field: '배송메세지', editable: true },
     { headerName: '택배사', field: '택배사', editable: true },
     { headerName: '운송장번호', field: '운송장번호', editable: true },
-    { headerName: '상품코드', field: '상품코드', editable: true },
     { field: 'id', hide: true }, // 숨겨진 id 필드 추가
+    { headerName: 'customerId', field: 'customerId', hide: true }, // 숨겨진 id 필드 추가
   ];
 
   const [columnDefs, setColumnDefs] = useState(defaultColumns);
   const [rowData, setRowData] = useState([]);
+  const [customers, setCustomers] =  useState([]);
+  const [products, setProducts] =  useState([]);
 
   const handleAddRow = () => {
     const newRow = {
       주문일자: '',
       주문번호: '',
-      상품명: '',
+      송장표기명: '',
       수량: 1,
       보내는사람: '',
       보내는사람전화번호1: '',
@@ -173,6 +184,15 @@ const InvoiceManagementRegistration = () => {
       return;
     }
 
+    // 필수 필드 검증: customerId와 productCode
+    const invalidRows = newRows.filter((row, index) => !row.customerId || !row.상품코드);
+    console.log(invalidRows);
+    if (invalidRows.length > 0) {
+        const invalidRowIndices = invalidRows.map((row) => rowData.indexOf(row) + 1); // 1-based index
+        alert(`다음 행에서 필수 값이 누락되었습니다: ${invalidRowIndices.join(', ')}행`);
+        return; // 등록 중단
+    }
+
     // 변경 될 상품 수를 메시지에 표시
     const confirmAdd = window.confirm(`${newRows.length}개의 송장 내용을 등록 하시겠습니까?`);
     
@@ -180,18 +200,12 @@ const InvoiceManagementRegistration = () => {
       return; // 취소 시 함수 종료
     }
 
-    const invalidRows = newRows.filter((row, index) => !row.상품명);
-    if (invalidRows.length > 0) {
-      alert(`상품명은 필수 입력입니다. ${invalidRows.map((row) => rowData.indexOf(row) + 1).join(', ')} 행`);
-      return;
-    }
-
     const mappedData = newRows.map((row) => ({
-      customerId: customerId, // 거래처 ID
+      customerId: row.customerId, // 거래처 ID
       invoiceId: invoiceId,   // 송장 ID
       orderDate: row.주문일자,
       orderNumber: row.주문번호,
-      productName: row.상품명,
+      invoiceName: row.송장표기명,
       quantity: row.수량,
       senderName: row.보내는사람,
       senderPhone1: row.보내는사람전화번호1,
@@ -206,6 +220,7 @@ const InvoiceManagementRegistration = () => {
       trackingNumber: row.운송장번호,
       productCode: row.상품코드,
       isNew: true, // 신규 플래그
+      createdBy: userId,
     }));
 
     try {
@@ -241,11 +256,11 @@ const InvoiceManagementRegistration = () => {
     
     const mappedData = updatedRows.map((row) => ({
       id: row.id,
-      customerId: customerId, // 거래처 ID
+      customerId: row.customerId, // 거래처 ID
       invoiceId: invoiceId,   // 송장 ID
       orderDate: row.주문일자,
       orderNumber: row.주문번호,
-      productName: row.상품명,
+      invoiceName: row.송장표기명,
       quantity: row.수량,
       senderName: row.보내는사람,
       senderPhone1: row.보내는사람전화번호1,
@@ -260,6 +275,7 @@ const InvoiceManagementRegistration = () => {
       trackingNumber: row.운송장번호,
       productCode: row.상품코드,
       isNew: false, // 신규 플래그
+      createdBy: userId,
     }));
 
     try {
@@ -309,7 +325,7 @@ const InvoiceManagementRegistration = () => {
       const mappedData = response.data.map((item) => ({
         주문일자: item.orderDate || "",
         주문번호: item.orderNumber || "",
-        상품명: item.productName || "",
+        송장표기명: item.invoiceName || "",
         수량: item.quantity || "",
         보내는사람: item.senderName || "",
         보내는사람전화번호1: item.senderPhone1 || "",
@@ -323,6 +339,7 @@ const InvoiceManagementRegistration = () => {
         택배사: item.deliveryCompany || "",
         운송장번호: item.trackingNumber || "",
         상품코드 : item.productCode || "",
+        거래처명 : item.customerName || "",
         id: item.id || "",
       }));
       setRowData(mappedData);
@@ -344,20 +361,62 @@ const InvoiceManagementRegistration = () => {
     link.click();
   };
 
+  // 엑셀 다운로드 기능
+  const handleDownloadExcel = () => {
+    if (rowData.length === 0) {
+      alert('다운로드할 데이터가 없습니다.');
+      return;
+    }
+     // 1. 컬럼 헤더 정의 (체크박스 컬럼 제외)
+    const columnHeaders = columnDefs
+      .filter((col) => col.field) // 필드가 있는 컬럼만 포함
+      .map((col) => col.headerName);
+
+     // 2. 데이터 매핑 (체크박스 컬럼 제외)
+    const excelData = rowData.map((row) =>
+      columnDefs.reduce((acc, col) => {
+        if (col.field  && !col.hide) { // 필드가 있는 경우만 추가
+          acc[col.headerName] = row[col.field] || ''; // 헤더 이름과 필드 매핑
+        }
+        return acc;
+      }, {})
+    );
+ 
+     // 3. 워크시트 생성
+     const worksheet = XLSX.utils.json_to_sheet(excelData, { header: columnHeaders });
+ 
+     // 4. 워크북 생성 및 워크시트 추가
+     const workbook = XLSX.utils.book_new();
+     XLSX.utils.book_append_sheet(workbook, worksheet, invoiceName);
+ 
+     // 5. 엑셀 파일 다운로드
+     XLSX.writeFile(workbook, invoiceName+`_송장_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   const onCellValueChanged = (params) => {
     if (params.oldValue !== params.newValue) {
       const { colDef, data } = params;
-  
-      // 상품명 변경 시 상품코드 업데이트
-      if (colDef.field === '상품명') {
-        const matchedProduct = productsRef.current.find(
-          (product) => product.invoiceName === params.newValue
-        );
+      
+      if (!products || !customers) {
+        alert('상품 데이터나 거래처 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+
+      if (colDef.field === '상품코드') {
+        const matchedProduct = products.find((product) => product.productCode === params.newValue);
   
         if (matchedProduct) {
-          data['상품코드'] = matchedProduct.productCode; // 상품코드 매핑
+          // 상품코드에 해당하는 거래처 및 송장표기명 자동 설정
+          const matchedCustomer = customers.find((customer) => customer.id === matchedProduct.customerId);
+          data['거래처명'] = matchedCustomer ? matchedCustomer.customerName : ''; // 거래처명 매핑
+          data['customerId'] = matchedCustomer ? matchedCustomer.id : ''; // 거래처 ID 매핑
+          data['송장표기명'] = matchedProduct.invoiceName || ''; // 송장표기명 매핑
+          //console.log(matchedProduct.invoiceName);
         } else {
-          data['상품코드'] = ''; // 매칭되는 상품이 없으면 빈 값
+          // 매칭되는 상품코드가 없을 경우 초기화
+          data['거래처명'] = '';
+          data['송장표기명'] = '';
+          data['customerId'] = '';
         }
       }
   
@@ -404,15 +463,6 @@ const InvoiceManagementRegistration = () => {
           isNew: true, // 새 데이터로 플래그 설정
         };
 
-        // 상품명과 상품코드 매핑
-        const matchedProduct = productsRef.current.find(
-          (product) => product.invoiceName === rowData['상품명']
-        );
-        console.log('Matched Product:', matchedProduct); // 디버깅용 로그
-        if (matchedProduct) {
-          rowData['상품코드'] = matchedProduct.productCode;
-        }
-
         return rowData;
       });
 
@@ -420,74 +470,67 @@ const InvoiceManagementRegistration = () => {
     });
   };
 
-  const handleDownloadProductCodes = () => {
-    if (!products || products.length === 0) {
-      alert("다운로드할 상품 데이터가 없습니다.");
+  // 엑셀 파일 업로드 및 매핑
+  const handleFileUpload = (e) => {
+    if (isUploading) {
       return;
     }
-  
-    // 1. 엑셀 데이터 생성
-    const worksheetData = products.map((product) => ({
-      "상품코드": product.productCode,
-      "상품명": product.productName,
-      "송장표기명": product.invoiceName,
-      "정산시모델명": product.modelName,
-    }));
-  
-    // 2. 워크시트 및 워크북 생성
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-  
-    // 3. 엑셀 파일 다운로드
-    const fileName = `상품코드_${new Date().toISOString().split("T")[0]}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-  };
+    setIsUploading(true);
 
-    // 엑셀 파일 업로드 및 매핑
-    const handleFileUpload = (e) => {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-  
-      reader.onload = (event) => {
+    if (!products || !customers) {
+      alert('상품 데이터나 거래처 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      setIsUploading(false);
+      return;
+    }
+
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      try {
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
   
-        // 첫 번째 행을 컬럼 이름으로 가져오기
         const headers = jsonData[0];
         const rows = jsonData.slice(1);
   
-        // rowData 생성 - 기본 컬럼에 해당하는 데이터만 매핑
         const newRowData = rows.map((row) => {
-          const rowData = {};
+        const rowData = {};
+  
+        headers.forEach((header, index) => {
+          const cellValue = row[index] || '';
+          rowData[header] = cellValue;
 
-          headers.forEach((header, index) => {
-            let cellValue = row[index];
-            
-            // 주문일자 필드의 경우 날짜 형식 변환
-            if (header === '주문일자' && typeof cellValue === 'number') {
-              const date = XLSX.SSF.parse_date_code(cellValue); // 날짜 시리얼 값 변환
-              const correctedDate = new Date(date.y, date.m - 1, date.d + 1); // 하루를 보정
-              cellValue = correctedDate.toISOString().split('T')[0]; // yyyy-MM-dd
+          if (header === '상품코드' && cellValue) {
+            const matchedProduct = products.find((product) => product.productCode === cellValue);
+            if (matchedProduct) {
+              const matchedCustomer = customers.find((customer) => customer.id === matchedProduct.customerId);
+              rowData['거래처명'] = matchedCustomer ? matchedCustomer.customerName : '';
+              rowData['customerId'] = matchedCustomer ? matchedCustomer.id : '';
+              rowData['송장표기명'] = matchedProduct.invoiceName || '';
+            } else {
+              rowData['거래처명'] = '';
+              rowData['customerId'] = '';
+              rowData['송장표기명'] = '';
             }
-            
-            // 상품명과 상품코드 매핑
-            const matchedProduct = products.find((product) => product.invoiceName === rowData['상품명']);
-            rowData['상품코드'] = matchedProduct ? matchedProduct.productCode : '';
-
-            rowData[header] = cellValue || ''; // 컬럼 이름과 매칭되는 데이터 매핑
-          });
-
-          rowData.isNew = true; // 새 데이터로 플래그 설정
-          return rowData;
+          }
         });
   
-        setRowData([...rowData, ...newRowData]); // 기존 데이터에 추가
-      };
+        rowData.isNew = true;
+        return rowData;
+      });
   
+      setRowData((prev) => [...prev, ...newRowData]);
+      } catch (error) {
+        console.error('엑셀 업로드 처리 중 오류:', error);
+        alert('엑셀 데이터를 처리하는 중 문제가 발생했습니다.');
+      } finally {
+        setIsUploading(false);
+      }
+    };
       reader.readAsArrayBuffer(file);
     };
 
@@ -521,7 +564,7 @@ const InvoiceManagementRegistration = () => {
       
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginBottom: 5, marginRight: 5 }}>
         <button style={styles.button} onClick={handleDownloadTemplate}>엑셀 양식 다운로드</button>
-        <button style={styles.button} onClick={handleDownloadProductCodes}>상품코드 다운로드</button>
+        <button style={styles.button} onClick={handleDownloadExcel}>엑셀 다운로드</button>
         <input
           type="file"
           accept=".xlsx, .xls"
@@ -535,7 +578,7 @@ const InvoiceManagementRegistration = () => {
         
       </div>
       <div
-        style={{ marginTop: '5px', width: '100%', height: '800px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}
+        style={{ marginTop: '5px', width: '100%', height: '750px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}
         className="ag-theme-alpine"
         // onPaste={handlePaste}
       >
@@ -545,6 +588,7 @@ const InvoiceManagementRegistration = () => {
           rowData={rowData}
           domLayout="normal"
           rowSelection="multiple"
+          stopEditingWhenCellsLoseFocus={true} // 셀 이동 시 자동 편집 종료
           defaultColDef={{ 
             resizable: true,
             sortable: true,
@@ -561,6 +605,7 @@ const InvoiceManagementRegistration = () => {
             },
           }}
           onCellValueChanged={onCellValueChanged} // 수정 시 이벤트 처리
+          onCellEditingStopped={onCellValueChanged} // 편집 종료 이벤트 핸들러 추가
         />
       </div>
     </div>

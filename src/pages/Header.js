@@ -21,7 +21,7 @@ const Header = () => {
       <nav style={styles.nav}>
         <Link to="/customers" style={styles.link}>거래처관리</Link>
         <Link to="/products" style={styles.link}>상품관리</Link>
-        <Link to="/invoice" style={styles.link}>송장관리</Link>
+        <Link to="/invoice/management" style={styles.link}>송장관리</Link>
         <div style={styles.iconContainer} onClick={handleLogout}>
           <FontAwesomeIcon icon={faSignOutAlt} style={styles.icon} />
         </div>

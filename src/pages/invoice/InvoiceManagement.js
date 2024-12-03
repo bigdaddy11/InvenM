@@ -9,9 +9,6 @@ import '../../index.css';
 const InvoiceManagement = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
-  const customerId = location.state?.customerId; 
-  const customerNm = location.state?.customerNm; 
 
   const defaultColumns = [
     { headerCheckboxSelection: true, 
@@ -83,14 +80,9 @@ const InvoiceManagement = () => {
   const [rowData, setRowData] = useState([]);
 
   const fetchInvoices = async () => {
-    if (!customerId) {
-      console.error('Customer ID가 없습니다.');
-      return;
-    }
-
     try {
       // POST 요청으로 customerId 전달
-      const response = await api.get(`/api/invoices/${customerId}`);
+      const response = await api.get(`/api/invoices`);
       const updatedData = response.data.map((item) => ({
         ...item,
         isEditable: false, // 기본 데이터는 수정 불가
@@ -105,7 +97,7 @@ const InvoiceManagement = () => {
 
   useEffect(() => {
     fetchInvoices();
-  }, [customerId]);
+  }, []);
 
   // 행 추가
   const handleAddRow = () => {
@@ -146,7 +138,7 @@ const InvoiceManagement = () => {
     const mappedData = newRows.map(row => ({
       invoiceName: row.invoiceName,
       sentDate: row.sentDate,
-      customerId: customerId, // 거래처 ID 추가
+      customerId: '', // 
       createdBy: "S07237"
     }));
 
@@ -207,7 +199,7 @@ const InvoiceManagement = () => {
       state: {
         invoiceId: rowData.id, // 송장 ID
         invoiceName: rowData.invoiceName, // 송장명
-        customerId: customerId, // 거래처 ID
+        customerId: '', // 거래처 ID
       },
     });
   };
@@ -218,7 +210,7 @@ const InvoiceManagement = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <div>
-          <h3 style={styles.h3}>[{customerNm}] 송장관리</h3>
+          <h3 style={styles.h3}>송장관리</h3>
         </div>
         <div style={{ padding: "0px 5px", alignItems: "center", display: "flex", gap: '5px' }}>
           <button style={styles.button} onClick={handleAddRow}>행 추가</button>

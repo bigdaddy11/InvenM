@@ -78,7 +78,7 @@ const CustomerManagement = () => {
     }
   };
 
-  // 엑셀 양식 다운로드 기능
+  // 엑셀 다운로드 기능
   const handleDownloadExcel = () => {
     if (rowData.length === 0) {
       alert('다운로드할 데이터가 없습니다.');
@@ -123,10 +123,13 @@ const CustomerManagement = () => {
     { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
     { headerName: '코드명', field: 'customerCode', width: 110 },
     { headerName: '거래처명', field: 'customerName', editable: true, width: 300 },
-    { headerName: '연락처', field: 'contact', editable: true, width: 200},
-    { headerName: '주소', field: 'address', editable: true, flex: 1 },
+    { headerName: '대표연락처', field: 'contact', editable: true, width: 200},
     { headerName: '대표이름', field: 'ceoName', editable: true, flex: 1},
-    { headerName: '담당자명', field: 'repName', editable: true, flex: 1},
+    { headerName: '담당자명1', field: 'repName1', editable: true, flex: 1},
+    { headerName: '담당자번호1', field: 'repNumber1', editable: true, flex: 1},
+    { headerName: '담당자명2', field: 'repName2', editable: true, flex: 1},
+    { headerName: '담당자번호2', field: 'repNumber2', editable: true, flex: 1},
+    { headerName: '주소', field: 'address', editable: true, flex: 1 },
     { headerName: '통장사본', field: 'bankAcount', editable: true, flex: 1},
     { headerName: '사업자등록증', field: 'license', editable: true, flex: 1},
   ];
@@ -147,7 +150,7 @@ const CustomerManagement = () => {
         <button style={styles.button} onClick={handleDownloadExcel}>엑셀 다운로드</button>
       </div>
       <div className="ag-theme-alpine" 
-        style={{ width: '100%', height: '800px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}>
+        style={{ marginTop: '5px', width: '100%', height: '800px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}>
         <AgGridReact
           columnDefs={columnDefs}
           rowData={rowData}

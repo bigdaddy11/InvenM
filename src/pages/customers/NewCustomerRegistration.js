@@ -46,10 +46,13 @@ function NewCustomerRegistration() {
     // 필드명을 엔티티와 일치하도록 변환
     const mappedData = rowData.map(item => ({
       customerName: item.거래처명 || '',
-      contact: item.연락처 || '',
+      contact: item.대표연락처 || '',
       address: item.주소 || '',
       ceoName: item.대표이름 || '',
-      repName: item.담당자명 || '',
+      repName1: item.담당자명1 || '',
+      repName2: item.담당자명2 || '',
+      repNumber1: item.담당자번호1 || '',
+      repNumber2: item.담당자번호2 || '',
       bankAcount: item.통장사본 || '',
       license: item.사업자등록증 || '',
       createdBy: userId,
@@ -74,12 +77,17 @@ function NewCustomerRegistration() {
       cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'} 
     },
     { 
-      headerName: '연락처', 
-      field: '연락처', 
+      headerName: '대표연락처', 
+      field: '대표연락처', 
       editable: true, 
       flex: 1,
       cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'} 
     },
+    { headerName: '대표이름', field: '대표이름', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
+    { headerName: '담당자명1', field: '담당자명1', editable: true, flex: 1},
+    { headerName: '담당자번호1', field: '담당자번호1', editable: true, flex: 1},
+    { headerName: '담당자명2', field: '담당자명2', editable: true, flex: 1},
+    { headerName: '담당자번호2', field: '담당자번호2', editable: true, flex: 1},
     { 
       headerName: '주소', 
       field: '주소', 
@@ -87,8 +95,6 @@ function NewCustomerRegistration() {
       flex: 1,
       cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'} 
     },
-    { headerName: '대표이름', field: '대표이름', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
-    { headerName: '담당자명', field: '담당자명', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
     { headerName: '통장사본', field: '통장사본', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
     { headerName: '사업자등록증', field: '사업자등록증', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
   ];
@@ -142,12 +148,15 @@ function NewCustomerRegistration() {
 
     const newData = rows.map((row) => ({
       거래처명: row[0] || '',
-      연락처: row[1] || '',
-      주소: row[2] || '',
-      대표이름: row[3] || '',
-      담당자명: row[4] || '',
-      통장사본: row[5] || '',
-      사업자등록증: row[6] || '',
+      대표연락처: row[1] || '',
+      대표이름: row[2] || '',
+      담당자명1: row[3] || '',
+      담당자번호1: row[4] || '',
+      담당자명2: row[5] || '',
+      담당자번호2: row[6] || '',
+      주소: row[7] || '',
+      통장사본: row[8] || '',
+      사업자등록증: row[9] || '',
     }));
     setRowData(newData);
   };
