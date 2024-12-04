@@ -17,11 +17,8 @@ const InvoiceManagementRegistration = () => {
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
-  }, []);
-
-  useEffect(() => {
     if (invoiceId) fetchInvoiceDetails();
-  }, [invoiceId]);
+  }, []);
 
   const fetchCustomers = async () => {
     try {
@@ -361,6 +358,42 @@ const InvoiceManagementRegistration = () => {
     link.click();
   };
 
+  // 거래처/상품 맵핑
+const handleMapping = () => {
+  if (!products || !customers) {
+    alert('상품 데이터나 거래처 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+
+  const updatedRows = rowData.map((row) => {
+    // isNew가 true인 경우에만 처리
+    if (row.isNew && row['상품코드']) {
+      const matchedProduct = products.find((product) => product.productCode.trim().toLowerCase() === row['상품코드'].trim().toLowerCase());
+      if (matchedProduct) {
+        const matchedCustomer = customers.find((customer) => customer.id === matchedProduct.customerId);
+
+        return {
+          ...row,
+          '거래처명': matchedCustomer ? matchedCustomer.customerName : '', // 거래처명 매핑
+          'customerId': matchedCustomer ? matchedCustomer.id : '', // 거래처 ID 매핑
+          '송장표기명': matchedProduct.invoiceName || '', // 송장표기명 매핑
+        };
+      } else {
+        return {
+          ...row,
+          '거래처명': '',
+          'customerId': '',
+          '송장표기명': '',
+        };
+      }
+    }
+    return row; // isNew가 false인 경우 원본 데이터 유지
+  });
+
+    setRowData(updatedRows); // 상태 업데이트
+    //alert('거래처명과 송장표기명 매핑이 완료되었습니다.');
+  };
+
   // 엑셀 다운로드 기능
   const handleDownloadExcel = () => {
     if (rowData.length === 0) {
@@ -411,7 +444,6 @@ const InvoiceManagementRegistration = () => {
           data['거래처명'] = matchedCustomer ? matchedCustomer.customerName : ''; // 거래처명 매핑
           data['customerId'] = matchedCustomer ? matchedCustomer.id : ''; // 거래처 ID 매핑
           data['송장표기명'] = matchedProduct.invoiceName || ''; // 송장표기명 매핑
-          //console.log(matchedProduct.invoiceName);
         } else {
           // 매칭되는 상품코드가 없을 경우 초기화
           data['거래처명'] = '';
@@ -471,68 +503,55 @@ const InvoiceManagementRegistration = () => {
   };
 
   // 엑셀 파일 업로드 및 매핑
-  const handleFileUpload = (e) => {
-    if (isUploading) {
-      return;
-    }
-    setIsUploading(true);
+const handleFileUpload = (e) => {
+  if (isUploading) {
+    return;
+  }
+  setIsUploading(true);
 
-    if (!products || !customers) {
-      alert('상품 데이터나 거래처 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
-      setIsUploading(false);
-      return;
-    }
+  const file = e.target.files[0];
+  const reader = new FileReader();
 
-    const file = e.target.files[0];
-    const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-    reader.onload = (event) => {
-      try {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-  
-        const headers = jsonData[0];
-        const rows = jsonData.slice(1);
-  
-        const newRowData = rows.map((row) => {
+      const headers = jsonData[0]; // 첫 번째 행: 헤더
+      const rows = jsonData.slice(1); // 나머지 행: 데이터
+
+      // 컬럼 맵핑만 진행
+      const newRowData = rows.map((row) => {
         const rowData = {};
-  
-        headers.forEach((header, index) => {
-          const cellValue = row[index] || '';
-          rowData[header] = cellValue;
 
-          if (header === '상품코드' && cellValue) {
-            const matchedProduct = products.find((product) => product.productCode === cellValue);
-            if (matchedProduct) {
-              const matchedCustomer = customers.find((customer) => customer.id === matchedProduct.customerId);
-              rowData['거래처명'] = matchedCustomer ? matchedCustomer.customerName : '';
-              rowData['customerId'] = matchedCustomer ? matchedCustomer.id : '';
-              rowData['송장표기명'] = matchedProduct.invoiceName || '';
-            } else {
-              rowData['거래처명'] = '';
-              rowData['customerId'] = '';
-              rowData['송장표기명'] = '';
-            }
-          }
+        headers.forEach((header, index) => {
+          const cellValue = row[index] || ''; // 각 셀의 값을 맵핑
+          rowData[header] = cellValue; // 헤더를 키로, 셀 값을 값으로 설정
         });
-  
-        rowData.isNew = true;
+
+        rowData.isNew = true; // 신규 데이터 플래그 설정
         return rowData;
       });
-  
-      setRowData((prev) => [...prev, ...newRowData]);
-      } catch (error) {
-        console.error('엑셀 업로드 처리 중 오류:', error);
-        alert('엑셀 데이터를 처리하는 중 문제가 발생했습니다.');
-      } finally {
-        setIsUploading(false);
-      }
-    };
-      reader.readAsArrayBuffer(file);
-    };
+
+      // 상태 업데이트
+      setRowData((prev) => {
+        const updatedData = [...prev, ...newRowData];
+        console.log('Updated Row Data:', updatedData); // 디버깅 로그
+        return updatedData;
+      });
+    } catch (error) {
+      console.error('엑셀 업로드 처리 중 오류:', error);
+      alert('엑셀 데이터를 처리하는 중 문제가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+};
 
   // 전역적으로 paste 이벤트 감지
   useEffect(() => {
@@ -563,6 +582,7 @@ const InvoiceManagementRegistration = () => {
       </div>
       
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginBottom: 5, marginRight: 5 }}>
+        <button style={styles.button} onClick={handleMapping}>거래처/상품 맵핑</button>
         <button style={styles.button} onClick={handleDownloadTemplate}>엑셀 양식 다운로드</button>
         <button style={styles.button} onClick={handleDownloadExcel}>엑셀 다운로드</button>
         <input
@@ -588,7 +608,6 @@ const InvoiceManagementRegistration = () => {
           rowData={rowData}
           domLayout="normal"
           rowSelection="multiple"
-          stopEditingWhenCellsLoseFocus={true} // 셀 이동 시 자동 편집 종료
           defaultColDef={{ 
             resizable: true,
             sortable: true,
@@ -605,7 +624,6 @@ const InvoiceManagementRegistration = () => {
             },
           }}
           onCellValueChanged={onCellValueChanged} // 수정 시 이벤트 처리
-          onCellEditingStopped={onCellValueChanged} // 편집 종료 이벤트 핸들러 추가
         />
       </div>
     </div>
