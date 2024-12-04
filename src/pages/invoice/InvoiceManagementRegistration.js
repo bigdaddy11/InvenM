@@ -338,6 +338,7 @@ const InvoiceManagementRegistration = () => {
         상품코드 : item.productCode || "",
         거래처명 : item.customerName || "",
         id: item.id || "",
+        isNew: false, // 서버에서 불러온 데이터는 기존 데이터로 간주
       }));
       setRowData(mappedData);
     } catch (error) {
@@ -507,6 +508,12 @@ const handleFileUpload = (e) => {
   if (isUploading) {
     return;
   }
+
+  // 파일을 선택하지 않으면 종료
+  if (!e.target.files || e.target.files.length === 0) {
+    return;
+  }
+
   setIsUploading(true);
 
   const file = e.target.files[0];
@@ -538,8 +545,9 @@ const handleFileUpload = (e) => {
 
       // 상태 업데이트
       setRowData((prev) => {
-        const updatedData = [...prev, ...newRowData];
-        console.log('Updated Row Data:', updatedData); // 디버깅 로그
+        const existingData = prev.filter((row) => !row.isNew); // 기존 데이터만 유지
+        const updatedData = [...existingData, ...newRowData];
+        console.log('Updated Row Data:', updatedData);
         return updatedData;
       });
     } catch (error) {
@@ -547,6 +555,7 @@ const handleFileUpload = (e) => {
       alert('엑셀 데이터를 처리하는 중 문제가 발생했습니다.');
     } finally {
       setIsUploading(false);
+      e.target.value = ''; // 파일 선택값 초기화
     }
   };
 
@@ -588,6 +597,7 @@ const handleFileUpload = (e) => {
         <input
           type="file"
           accept=".xlsx, .xls"
+          onClick={(e) => (e.target.value = null)} // 값 초기화
           onChange={handleFileUpload}
           style={{ display: 'none' }}
           id="fileUpload"

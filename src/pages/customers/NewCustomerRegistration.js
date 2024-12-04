@@ -84,10 +84,10 @@ function NewCustomerRegistration() {
       cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'} 
     },
     { headerName: '대표이름', field: '대표이름', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
-    { headerName: '담당자명1', field: '담당자명1', editable: true, flex: 1},
-    { headerName: '담당자번호1', field: '담당자번호1', editable: true, flex: 1},
-    { headerName: '담당자명2', field: '담당자명2', editable: true, flex: 1},
-    { headerName: '담당자번호2', field: '담당자번호2', editable: true, flex: 1},
+    { headerName: '담당자명1', field: '담당자명1', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
+    { headerName: '담당자번호1', field: '담당자번호1', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
+    { headerName: '담당자명2', field: '담당자명2', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
+    { headerName: '담당자번호2', field: '담당자번호2', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa'}},
     { 
       headerName: '주소', 
       field: '주소', 

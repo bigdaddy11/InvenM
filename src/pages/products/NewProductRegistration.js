@@ -19,22 +19,6 @@ function NewProductRegistration() {
   const customerNm = location.state?.customerNm; // 전달받은 customerId
   const navigate = useNavigate();
 
-
-  // 엑셀 업로드 핸들러
-  const handleExcelUpload = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const data = new Uint8Array(event.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
-      setRowData(jsonData);
-    };
-    reader.readAsArrayBuffer(file);
-  };
-
   // 새로운 행 추가
   const handleAddRow = () => {
     const newRow = { id: '', productName: '', invoiceName: '', modelName: ''};
@@ -51,7 +35,7 @@ function NewProductRegistration() {
     // 빈 행 확인
     for (let i = 0; i < rowData.length; i++) {
       const row = rowData[i];
-      if (!row.상품명 || !row.송장표기 || !row.정산시모델명) {
+      if (!row.상품명 || !row.송장표기명 || !row.정산시모델명) {
         alert(`등록할 수 없는 빈 데이터가 있습니다. ${i + 1}번째 행을 확인해주세요.`);
         return;
       }
@@ -60,7 +44,7 @@ function NewProductRegistration() {
     // 필드명을 엔티티와 일치하도록 변환
     const mappedData = rowData.map(item => ({
       productName: item.상품명 || '',
-      invoiceName: item.송장표기 || '',
+      invoiceName: item.송장표기명 || '',
       modelName: item.정산시모델명 || '',
       createdBy: userId,
       customerId: customerId,
@@ -81,7 +65,7 @@ function NewProductRegistration() {
   const columnDefs = [
     // { headerName: 'ID', field: 'id', editable: true },
     { headerName: '상품명', field: '상품명', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', flex: 1  }  },
-    { headerName: '송장표기', field: '송장표기', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', flex: 1  }  },
+    { headerName: '송장표기명', field: '송장표기명', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', flex: 1  }  },
     { headerName: '정산시모델명', field: '정산시모델명', editable: true, flex: 1, cellStyle: { color: 'blue', backgroundColor: '#e0f7fa', flex: 1  }  },
     // { headerName: '활성화 여부', field: 'isActive', editable: true, cellRenderer: 'booleanCellRenderer' },
   ];
@@ -92,31 +76,32 @@ function NewProductRegistration() {
     const reader = new FileReader();
 
     reader.onload = (event) => {
-      const data = new Uint8Array(event.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      try {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // 첫 번째 행을 헤더로 지정
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-      // 첫 번째 행을 컬럼 이름으로 가져오기
-      const headers = jsonData[0];
-      const rows = jsonData.slice(1);
+        const headers = jsonData[0]; // 첫 번째 행을 헤더로 사용
+        const rows = jsonData.slice(1); // 나머지 행은 데이터로 사용
 
-      // 기본 컬럼과 일치하는 컬럼만 사용
-      const allowedHeaders = headers.filter(header => 
-        columnDefs.some(col => col.field === header)
-      );
-
-      // rowData 생성 - 기본 컬럼에 해당하는 데이터만 매핑
-      const newRowData = rows.map((row) => {
-        const rowData = {};
-        allowedHeaders.forEach((header, index) => {
-          rowData[header] = row[index] || ''; // 컬럼 이름과 매칭되는 데이터 매핑
+        // 헤더를 키로 매핑하여 객체 생성
+        const mappedData = rows.map((row) => {
+          const rowData = {};
+          headers.forEach((header, index) => {
+            rowData[header] = row[index] || ''; // 값이 없으면 빈 문자열로 처리
+          });
+          return rowData;
         });
-        return rowData;
-      });
 
-      setRowData(newRowData);
+        setRowData(mappedData); // 상태 업데이트
+      } catch (error) {
+        console.error('엑셀 업로드 처리 중 오류:', error);
+        alert('엑셀 데이터를 처리하는 중 문제가 발생했습니다.');
+      }
     };
 
     reader.readAsArrayBuffer(file);
@@ -133,7 +118,7 @@ function NewProductRegistration() {
     .map((row) => row.split('\t')); // 탭으로 데이터 분리
     const newData = rows.map((row) => ({
       상품명: row[0] || '',
-      송장표기: row[1] || '',
+      송장표기명: row[1] || '',
       정산시모델명: row[2] || ''
     }));
     setRowData(newData);
@@ -159,13 +144,13 @@ function NewProductRegistration() {
         <h3 style={styles.h3}>{customerNm} 상품등록</h3>
         </div>
         <div style={{ padding: "0px 5px", alignItems: "center", display: "flex", gap: '5px' }}>
-          <input
+          {/* <input
             type="file"
             accept=".xlsx, .xls"
-            onChange={handleExcelUpload}
+            onChange={handleFileUpload}
             style={{ display: 'none' }}
             id="excel-upload"
-          />
+          /> */}
           <label htmlFor="excel-upload">
             <input
               type="file"
