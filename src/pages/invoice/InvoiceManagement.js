@@ -3,10 +3,13 @@ import { AgGridReact } from 'ag-grid-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
+import * as XLSX from 'xlsx';
 import api from '../common/api'
 import '../../index.css';
+import { useAuth } from '../../AuthContext';
 
 const InvoiceManagement = () => {
+  const { userId } = useAuth(); // AuthContext에서 userId 가져오기
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -15,12 +18,15 @@ const InvoiceManagement = () => {
       checkboxSelection: true, 
       width: 50,
       headerStyle: { textAlign: 'center' }, // 헤더 텍스트 가운데 정렬
-      headerClass: 'header-center', // CSS 클래스 추가
+      
       cellStyle: (params) => {
         const style = { cursor: 'pointer', textAlign: 'center' }; // 기본 스타일 
         if (params.data.isNew) {
           style.color = 'blue'; // 새 행인 경우 글씨 색상을 파란색으로 설정
           style.backgroundColor = '#e0f7fa';
+        } else if (params.data?.isUpdated) {
+          style.color = "green"; // 수정된 데이터
+          style.backgroundColor = "#f7ffe0";
         }
         return style;
       },
@@ -35,6 +41,9 @@ const InvoiceManagement = () => {
         if (params.data.isNew) {
           style.color = 'blue'; // 새 행인 경우 글씨 색상을 파란색으로 설정
           style.backgroundColor = '#e0f7fa';
+        } else if (params.data?.isUpdated) {
+          style.color = "green"; // 수정된 데이터
+          style.backgroundColor = "#f7ffe0";
         }
         return style;
       }
@@ -48,6 +57,9 @@ const InvoiceManagement = () => {
         if (params.data.isNew) {
           style.color = 'blue'; // 새 행인 경우 글씨 색상을 파란색으로 설정
           style.backgroundColor = '#e0f7fa';
+        } else if (params.data?.isUpdated) {
+          style.color = "green"; // 수정된 데이터
+          style.backgroundColor = "#f7ffe0";
         }
         return style;
       },
@@ -85,7 +97,7 @@ const InvoiceManagement = () => {
       const response = await api.get(`/api/invoices`);
       const updatedData = response.data.map((item) => ({
         ...item,
-        isEditable: false, // 기본 데이터는 수정 불가
+        isEditable: true, // 기본 데이터는 수정 불가
         isNew: false, // 기존 데이터는 새로 추가된 데이터가 아님
       }));
       setRowData(updatedData);
@@ -139,7 +151,7 @@ const InvoiceManagement = () => {
       invoiceName: row.invoiceName,
       sentDate: row.sentDate,
       customerId: '', // 
-      createdBy: "S07237"
+      createdBy: userId,
     }));
 
     try {
@@ -149,6 +161,43 @@ const InvoiceManagement = () => {
     } catch (error) {
       console.error('등록 실패:', error);
       alert('송장 등록에 실패했습니다. 다시 시도해 주세요.');
+    }
+  };
+
+  const handleDeleteRow = () => {
+    const selectedNodes = gridRef.current.api.getSelectedNodes();
+    const selectedRows = selectedNodes.map((node) => node.data);
+    const updatedRows = rowData.filter((row) => !selectedRows.includes(row));
+    setRowData(updatedRows);
+  };
+
+  // 송장명 수정
+  const handleUpdateInvoices = async () => {
+    const updatedRows = rowData.filter((row) => row.isUpdated);
+
+    if (updatedRows.length === 0) {
+      alert('수정된 데이터가 없습니다.');
+      return;
+    }
+
+    const confirmUpdate = window.confirm(`${updatedRows.length}개의 데이터를 수정하시겠습니까?`);
+    if (!confirmUpdate) {
+      return; // 취소 시 함수 종료
+    }
+
+    // 수정할 데이터만 매핑
+    const mappedData = updatedRows.map((row) => ({
+      id: row.id,
+      invoiceName: row.invoiceName
+    }));
+
+    try {
+      await api.put('/api/invoices', mappedData); // 서버로 수정 데이터 전송
+      alert('송장이 성공적으로 수정되었습니다.');
+      fetchInvoices(); // 수정 후 데이터 재조회
+    } catch (error) {
+      console.error('수정 실패:', error);
+      alert('송장 수정에 실패했습니다. 다시 시도해 주세요.');
     }
   };
 
@@ -204,6 +253,78 @@ const InvoiceManagement = () => {
     });
   };
 
+  const onCellValueChanged = (params) => {
+    if (params.oldValue !== params.newValue) {
+      const { colDef, data } = params;
+      // 수정 플래그 설정
+      data.isUpdated = true;
+  
+      // 상태 업데이트
+      setRowData([...rowData]);
+    }
+  };
+
+  // 선택된 행만 엑셀 다운로드
+  const handleSelectedExcelDownload = async () => {
+    const selectedNodes = gridRef.current.api.getSelectedNodes(); // 선택된 행
+    const selectedRows = selectedNodes.map((node) => node.data);
+
+    if (selectedRows.length === 0) {
+      alert('선택된 행이 없습니다.');
+      return;
+    }
+
+    try {
+      // 모든 선택된 송장의 상세 데이터를 가져옴
+      const requests = selectedRows.map((row) =>
+        api.get(`/api/invoice-details/${row.id}`) // 각 송장의 ID로 데이터 요청
+      );
+
+      const responses = await Promise.all(requests);
+
+      // 엑셀 데이터 생성
+      const workbook = XLSX.utils.book_new();
+  
+      responses.forEach((response, index) => {
+        const row = selectedRows[index];
+        const invoiceDetails = response.data;
+  
+        // 송장 데이터를 시트 데이터로 변환
+        const sheetData = invoiceDetails.map((detail) => ({
+          주문일자: detail.orderDate,
+          주문번호: detail.orderNumber,
+          거래처명: detail.customerName,
+          상품코드: detail.productCode,
+          송장표기명: detail.invoiceName,
+          수량: detail.quantity,
+          보내는사람: detail.senderName,
+          보내는사람전화번호1: detail.senderPhone1,
+          보내는사람전화번호2: detail.senderPhone2,
+          수취인: detail.recipientName,
+          수취인전화번호1: detail.recipientPhone1,
+          수취인전화번호2: detail.recipientPhone2,
+          수취인우편번호: detail.recipientZipcode,
+          수취인주소: detail.recipientAddress,
+          배송메세지: detail.deliveryMessage,
+          택배사: detail.deliveryCompany,
+          운송장번호: detail.trackingNumber,
+
+        }));
+  
+        // 시트 생성
+        const worksheet = XLSX.utils.json_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(workbook, worksheet, row.invoiceName || `Sheet${index + 1}`); // 송장명을 탭 이름으로 설정
+      });
+
+      // 엑셀 파일 다운로드
+      const fileName = `송장관리_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+    } catch (error) {
+      console.error('엑셀 다운로드 실패:', error);
+      alert('엑셀 다운로드 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+  }
+
   const gridRef = React.useRef();
 
   return (
@@ -214,9 +335,14 @@ const InvoiceManagement = () => {
         </div>
         <div style={{ padding: "0px 5px", alignItems: "center", display: "flex", gap: '5px' }}>
           <button style={styles.button} onClick={handleAddRow}>행 추가</button>
-          <button style={styles.button} onClick={handleRegisterInvoices}>송장등록</button>
-          <button style={styles.button} onClick={handleDelete}>송장삭제</button>
+          <button style={styles.button} onClick={handleDeleteRow}>행 삭제</button>
+          <button style={styles.button} onClick={handleRegisterInvoices}>송장명등록</button>
+          <button style={styles.button} onClick={handleUpdateInvoices}>송장명수정</button>
+          <button style={styles.button} onClick={handleDelete}>송장명삭제</button>
         </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginBottom: 5, marginRight: 5 }}>
+          <button style={styles.button} onClick={handleSelectedExcelDownload}>선택 엑셀 다운로드</button>
       </div>
       <div
         style={{ marginTop: '5px', width: '100%', height: '800px', backgroundColor: 'whitesmoke', padding: "0px 5px" }}
@@ -229,10 +355,21 @@ const InvoiceManagement = () => {
           rowData={rowData}
           rowSelection="multiple"
           domLayout="normal"
-          //onRowClicked={handleRowClick} // 행 클릭 이벤트 처리
+          onCellValueChanged={onCellValueChanged} // 수정 시 이벤트 처리
           defaultColDef={{ 
             resizable: true ,
             sortable: true,
+            cellStyle: (params) => {
+              const style = {};
+              if (params.data?.isNew) {
+                style.color = 'blue'; // 새 행인 경우 글씨 색상 설정
+                style.backgroundColor = '#e0f7fa'; // 새 행인 경우 배경색 설정
+              } else if (params.data?.isUpdated) {
+                style.color = "green"; // 수정된 데이터
+                style.backgroundColor = "#f7ffe0";
+              }
+              return style;
+            },
           }}
         />
       </div>
